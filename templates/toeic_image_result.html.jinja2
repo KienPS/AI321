@@ -4,53 +4,76 @@
 {% block body %}
     <div class="flex flex-col py-8 px-16 mx-64 space-y-8">
         <h2 class="text-2xl font-bold text-center">TOEIC Test Result</h2>
-        <div>
-            <div class="h-80 uk-overflow-auto overflow-y-auto">
-                <table class="uk-table uk-table-divider uk-table-small border">
-                    <caption class="sticky top-0 bg-white">Listening test</caption>
-                    <thead class="bg-gray-100 sticky top-5">
-                        <tr>
-                            <th>Question</th>
-                            <th>Expected answer</th>
-                            <th>Your answer</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for question in toeic_result['listening'] %}
-                            <tr {% if question['correct'] %}class="bg-green-100 hover:bg-green-200"{% else %}class="bg-red-100 hover:bg-red-200"{% endif %}>
-                                <td>{{ question['question'] }}</td>
-                                <td>{{ question['expected'] }}</td>
-                                <td>{{ question['yours'] }}</td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            <p class="font-semibold text-lg">Score: {{ listening_score }} / 100</p>
-        </div>
-        <div>
-            <div class="h-80 uk-overflow-auto overflow-y-auto">
-                <table class="uk-table uk-table-divider uk-table-small border">
-                    <caption class="sticky top-0 bg-white">Reading test</caption>
-                    <thead class="bg-gray-100 sticky top-5">
-                        <tr>
-                            <th>Question</th>
-                            <th>Expected answer</th>
-                            <th>Your answer</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for question in toeic_result['reading'] %}
-                            <tr {% if question['correct'] %}class="bg-green-100 hover:bg-green-200"{% else %}class="bg-red-100 hover:bg-red-200"{% endif %}>
-                                <td>{{ question['question'] }}</td>
-                                <td>{{ question['expected'] }}</td>
-                                <td>{{ question['yours'] }}</td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            <p class="font-semibold text-lg">Score: {{ reading_score }} / 100</p>
-        </div>
+        <ul class="uk-tab-alt" uk-tab>
+            <li><a href="#">Text view</a></li>
+            <li><a href="#">Image view</a></li>
+        </ul>
+        <ul class="uk-switcher mt-6">
+            <li class="flex flex-col space-y-6">
+                <div class="flex flex-col space-y-4">
+                    <div class="h-80 uk-overflow-auto overflow-y-auto">
+                        <table id="listening" class="uk-table uk-table-divider uk-table-small border">
+                            <caption class="sticky top-0 bg-white">Listening test</caption>
+                            <thead class="bg-gray-100 sticky top-5">
+                                <tr>
+                                    <th>Question</th>
+                                    <th>Expected answer</th>
+                                    <th>Your answer</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for question in toeic_result['listening'] %}
+                                    <tr {% if question['correct'] %}class="bg-green-100 hover:bg-green-200"{% else %}class="bg-red-100 hover:bg-red-200"{% endif %}>
+                                        <td>{{ question['question'] }}</td>
+                                        <td>{{ question['expected'] }}</td>
+                                        <td>{{ question['yours'] }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <p class="font-semibold text-lg">Score: {{ listening_score }} / 100</p>
+                        <form method="post" action="{{ url_for('export_to_excel') }}">
+                            <input type="hidden" name="type" value="listening">
+                            <button class="uk-button uk-button-primary">Export to Excel</button>
+                        </form>
+                    </div>
+                </div>
+                <div class="flex flex-col space-y-4">
+                    <div class="h-80 uk-overflow-auto overflow-y-auto">
+                        <table id="reading" class="uk-table uk-table-divider uk-table-small border">
+                            <caption class="sticky top-0 bg-white">Reading test</caption>
+                            <thead class="bg-gray-100 sticky top-5">
+                                <tr>
+                                    <th>Question</th>
+                                    <th>Expected answer</th>
+                                    <th>Your answer</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for question in toeic_result['reading'] %}
+                                    <tr {% if question['correct'] %}class="bg-green-100 hover:bg-green-200"{% else %}class="bg-red-100 hover:bg-red-200"{% endif %}>
+                                        <td>{{ question['question'] }}</td>
+                                        <td>{{ question['expected'] }}</td>
+                                        <td>{{ question['yours'] }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <p class="font-semibold text-lg">Score: {{ reading_score }} / 100</p>
+                        <form method="post" action="{{ url_for('export_to_excel') }}">
+                            <input type="hidden" name="type" value="reading">
+                            <button class="uk-button uk-button-primary">Export to Excel</button>
+                        </form>
+                    </div>
+                </div>
+            </li>
+            <li>
+                <img src="data:image/jpeg;base64,{{ image_base64 }}" alt="TOEIC test result" class="w-full">
+            </li>
+        </ul>
     </div>
 {% endblock %}

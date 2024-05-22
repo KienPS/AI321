@@ -1,16 +1,19 @@
 from dataclasses import dataclass
 import io
 from typing import Annotated
+import base64
 
-from litestar import get, post, Controller, MediaType
+from litestar import get, post, Controller
 from litestar.params import Body
 from litestar.enums import RequestEncodingType
 from litestar.response import Template
-from litestar.datastructures import UploadFile
+from litestar.datastructures import UploadFile, State
+from litestar.response import File
 
 from pydantic import BaseModel, BaseConfig
 import numpy as np
 import cv2
+import openpyxl 
 
 import detectors as dt
 
@@ -23,6 +26,10 @@ class TOEICAnswerSheet(BaseModel):
         arbitrary_types_allowed=True
 
 
+@dataclass
+class TOEICExcelExport(BaseModel):
+    type: str
+
 class ToeicParserController(Controller):
     
     @get(path="/", name="toeic_image_upload_form")
@@ -32,6 +39,7 @@ class ToeicParserController(Controller):
     @post(path="/parse", name="parse_toeic_image")
     async def parse_toeic_answer_sheet_image(
             self,
+            state: State,
             data: Annotated[TOEICAnswerSheet, Body(media_type=RequestEncodingType.MULTI_PART)]
     ) -> Template:
         content = await data.image.read()
@@ -48,7 +56,7 @@ class ToeicParserController(Controller):
         user_listening_answer, user_reading_answer = [], []
         listening_answer_keys, reading_answer_keys = ['A'] * 100, ['B'] * 100 # For demo purpose only
         
-        image_clone = image.copy()
+        image_clone = toeic_answer_sheet.copy()
         for i, sheet in enumerate(listening_test_set):
             keys = listening_answer_keys[25*i:25*(i+1)]
             ans = dt.get_my_ans(sheet, keys, image_clone, i, 'listening')
@@ -60,6 +68,8 @@ class ToeicParserController(Controller):
             ans = dt.get_my_ans(sheet, keys, image_clone, i, 'reading')
             for x in ans:
                 user_reading_answer.append(x)
+        new_shape = (int(image_clone.shape[1]*0.4), int(image_clone.shape[0]*0.4))
+        image_clone = cv2.resize(image_clone, new_shape)
                 
         toeic_result = {
             'listening': [],
@@ -79,12 +89,43 @@ class ToeicParserController(Controller):
             
         listening_score = listening_score
         reading_score = reading_score
+
+        state.toeic_result = toeic_result
         
         return Template(
             template_name='toeic_image_result.html.jinja2',
             context={
                 'toeic_result': toeic_result,
                 'listening_score': listening_score,
-                'reading_score': reading_score
+                'reading_score': reading_score,
+                'image_base64': base64.b64encode(cv2.imencode('.png', image_clone)[1]).decode()
             }
         )
+    
+    @post(path="/export", name="export_to_excel")
+    async def export_to_excel(self, 
+                              state: State, 
+                              data: Annotated[TOEICExcelExport, Body(media_type=RequestEncodingType.URL_ENCODED)]
+                              ) -> File:
+        toeic_result = state.toeic_result
+        type = data.type.lower()
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = f"TOEIC {type.capitalize()} Result"
+        ws.append(['Question', 'Expected', 'Yours'])
+
+        for c in 'ABC':
+            ws[f'{c}1'].fill = openpyxl.styles.PatternFill(start_color='808080', end_color='808080', fill_type='solid')
+
+        for question in toeic_result[type]:
+            color = '00FF00' if question['correct'] else 'FF0000'
+            ws.append([question['question'], question['expected'], question['yours']])
+            for c in 'ABC':
+                ws[f'{c}{ws.max_row}'].fill = openpyxl.styles.PatternFill(start_color=color, end_color=color, fill_type='solid')
+            
+        wb.save(f'{type.capitalize()}.xlsx')    
+        return File(
+            path=f'{type.capitalize()}.xlsx',
+            filename=f'{type.capitalize()}.xlsx'
+        )
+        
