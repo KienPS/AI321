@@ -1,0 +1,14 @@
+{% extends 'base.html.jinja2' %}
+
+
+{% block content %}
+    <form action="{{ url_for('parse_toeic_image') }}" method="post" enctype="multipart/form-data" class="w-full max-w-md flex flex-col space-y-4">
+        <label for="toeic_image" class="uk-form-label">Upload TOEIC Answer sheet image:</label>
+        <input id="toeic_image" name="image" type="file" class="uk-input">
+        <div class="flex justify-between w-full">
+            <label for="scanned" class="uk-form-label">My image is a scanned one</label>
+            <input id="scanned" type="checkbox" name="scanned" class="uk-checkbox" value="true">
+        </div>
+        <button type="submit" class="uk-button uk-button-primary">Parse</button>
+    </form>
+{% endblock %}
