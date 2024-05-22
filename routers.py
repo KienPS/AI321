@@ -61,29 +61,30 @@ class ToeicParserController(Controller):
             for x in ans:
                 user_reading_answer.append(x)
                 
-            toeic_result = {
-                'listening': [],
-                'reading': []
-            }
-            listening_score, reading_score = 0, 0
+        toeic_result = {
+            'listening': [],
+            'reading': []
+        }
+        listening_score, reading_score = 0, 0
+        
+        for i, (user, key) in enumerate(zip(user_listening_answer, listening_answer_keys)):
+            toeic_result['listening'].append({'question': i+1, 'expected': key, 'yours': user, 'correct': user==key})
+            if user == key:
+                listening_score += 1
+        
+        for i, (user, key) in enumerate(zip(user_reading_answer, reading_answer_keys)):
+            toeic_result['reading'].append({'question': i+1, 'expected': key, 'yours': user, 'correct': user==key})
+            if user == key:
+                reading_score += 1
             
-            for i, (user, key) in enumerate(zip(user_listening_answer, listening_answer_keys)):
-                toeic_result['listening'].append({'question': i+1, 'expected': key, 'yours': user, 'correct': user==key})
-                if user == key:
-                    listening_score += 1
-            
-            for i, (user, key) in enumerate(zip(user_reading_answer, reading_answer_keys)):
-                toeic_result['reading'].append({'question': i+1, 'expected': key, 'yours': user, 'correct': user==key})
-                if user == key:
-                    reading_score += 1
-                
-            listening_score = listening_score / 100.
-            reading_score = reading_score / 100.
+        listening_score = listening_score
+        reading_score = reading_score
+        
         return Template(
             template_name='toeic_image_result.html.jinja2',
             context={
                 'toeic_result': toeic_result,
-                'listeing_score': listening_score,
+                'listening_score': listening_score,
                 'reading_score': reading_score
             }
         )
