@@ -87,10 +87,14 @@ class ToeicParserController(Controller):
             if user == key:
                 reading_score += 1
             
-        listening_score = listening_score
-        reading_score = reading_score
+        cv2.putText(image_clone, f"{listening_score}/100", (10, 70), cv2.FONT_HERSHEY_SIMPLEX, 3, (0, 0, 255), 5)
+        cv2.putText(image_clone, f"{reading_score}/100", (10, 160), cv2.FONT_HERSHEY_SIMPLEX, 3, (0, 0, 255), 5)
 
-        state.toeic_result = toeic_result
+        state.toeic = {
+            'toeic_result': toeic_result,
+            'listening_score': listening_score,
+            'reading_score': reading_score,
+        }
         
         return Template(
             template_name='toeic_image_result.html.jinja2',
@@ -107,12 +111,12 @@ class ToeicParserController(Controller):
                               state: State, 
                               data: Annotated[TOEICExcelExport, Body(media_type=RequestEncodingType.URL_ENCODED)]
                               ) -> File:
-        toeic_result = state.toeic_result
+        toeic_result = state.toeic['toeic_result']
         type = data.type.lower()
         wb = openpyxl.Workbook()
         ws = wb.active
         ws.title = f"TOEIC {type.capitalize()} Result"
-        ws.append(['Question', 'Expected', 'Yours'])
+        ws.append(['Question', 'Expected', 'Yours', '', 'Score', state.toeic[f'{type}_score']])
 
         for c in 'ABC':
             ws[f'{c}1'].fill = openpyxl.styles.PatternFill(start_color='808080', end_color='808080', fill_type='solid')
