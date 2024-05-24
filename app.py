@@ -19,6 +19,5 @@ app = Litestar(
     template_config=TemplateConfig(
         directory=Path("templates"),
         engine=JinjaTemplateEngine
-    ),
-    debug=True
+    )
 )
